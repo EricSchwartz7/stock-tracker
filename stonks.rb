@@ -32,15 +32,21 @@ def print_first_result(response)
 end
 
 def get_daily_change(ticker, comments = false)
-    (1..30).each do |i|
+    i = 1
+    while i <= 30 do
         time_query = "&after=#{i}w&before=#{i - 1}w"
         response = fetch(ticker, time_query, comments)
-        results = response["metadata"]["total_results"] unless !response["metadata"]
 
-        date = (Date.today - (i * 7))
-
-        puts "#{ticker} #{date}: #{results}"
-        sleep 0.7
+        if response["metadata"]
+            results = response["metadata"]["total_results"]
+            date = (Date.today - (i * 7))
+            puts "#{ticker} #{date}: #{results}"
+            i += 1
+        else
+            puts "Retrying..."
+        end
+        
+        sleep 0.3
     end
 end
 
@@ -75,8 +81,14 @@ def fetch_all_comments(time_query)
 end
 
 # fetch_all_posts(time_query)
-get_daily_change("GME", true)
+for arg in ARGV
+    get_daily_change(arg, true)
+end
 # fetch_all_comments("&after=12h")
+
+# for arg in ARGV
+#     puts arg
+#  end
 
 # If we want to compare day to day, we'll need to store results in a database.
 # Another option would be to just use "before" queries
