@@ -39,21 +39,23 @@ get '/:ticker' do
         response = fetch(ticker, time_query, comments)
         results = response["metadata"]["total_results"] unless !response["metadata"]
 
-        date = ""
+        date_time = ""
 
         case time_increment
         when "w"
-            date = (Date.today - (after.to_i * 7))
+            date_time = (Date.today - (after.to_i * 7))
         when "d"
-            date = (Date.today - after.to_i)
+            date_time = (Date.today - after.to_i)
         when "h"
-            date = "Hour"
+            hours = after.to_i
+            date_time = (DateTime.now - (hours/24.0))
         when "m"
-            date = "Minute"
+            minutes = after.to_i
+            date_time = (DateTime.now - (minutes/1440.0))
         end
 
-        puts "#{ticker} #{date}: #{results}"
-        $single_result = [date, results].to_json
+        puts "#{ticker} #{date_time}: #{results}"
+        $single_result = [date_time, results].to_json
     end
 
     runner()
