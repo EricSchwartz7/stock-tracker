@@ -4,6 +4,8 @@ require "date"
 require "httparty"
 require "csv"
 require "json"
+require 'mail'
+
 
 BASE_URL = "https://api.pushshift.io/reddit/search/"
 ticker_table = CSV.parse(File.read("nyse.csv"), headers: true)
@@ -17,6 +19,17 @@ ALL_TICKERS = ["GME", "AMC", "BB", "NOK", "AAL"]
       type = comments ? "comment/?q=" : "submission/?q="
       url = "#{BASE_URL}#{type}#{ticker}#{time_query}&metadata=true&size=1&sort_by=created_utc&sort=desc"
       HTTParty.get(url)
+  end
+
+  def send_email(body)
+    mail = Mail.new do
+      from    'stonks@stonks.com'
+      to      'ericschwartz7@gmail.com'
+      subject 'Stonks'
+      body     body
+    end
+    
+    mail.deliver
   end
 
   def runner(ticker)
@@ -53,9 +66,12 @@ ALL_TICKERS = ["GME", "AMC", "BB", "NOK", "AAL"]
       end
 
       puts "#{ticker} #{date_time}: #{results}"
-      $single_result = [date_time, results].to_json
+      "#{ticker} #{date_time}: #{results}\n"
+      # $single_result = [date_time, results].to_json
   end
 
+  email_body = ""
   ALL_TICKERS.each do |ticker|
-    runner(ticker)
+    email_body += runner(ticker)
   end
+  send_email(email_body)

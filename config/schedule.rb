@@ -21,6 +21,8 @@
 
 set :output, "/Users/ericschwartz/dev/projects/stonks/log/cron.log"
 
-every 1.minute do
+every 1.hour do
   rake :test
 end
+
+# Run this after making changes: whenever --update-crontab
