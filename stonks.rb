@@ -1,3 +1,5 @@
+# TO START >> ruby stonks.rb
+
 require "pry-byebug"
 require "date"
 require "httparty"
@@ -6,6 +8,9 @@ require "sinatra"
 require "sinatra/reloader"
 require "json"
 require "sinatra/cors"
+require "sinatra/config_file"
+
+config_file './config.yml'
 
 set :allow_origin, "*"
 set :allow_methods, "GET,HEAD,POST"
@@ -17,7 +22,7 @@ ticker_table = CSV.parse(File.read("nyse.csv"), headers: true)
 ALL_TICKERS = ticker_table.map{|ticker_row| ticker_row["Symbol"]}
 # ALL_TICKERS = ["GME", "AMC", "BB", "NOK", "AAL"]
 
-get '/:ticker' do
+get '/pushshift/:ticker' do
     $results = []
     $single_result = []
 
@@ -28,6 +33,7 @@ get '/:ticker' do
     end
 
     def runner
+      puts params.inspect
         ticker = params["ticker"]
         after = params["after"]
         before = params["before"]
@@ -60,6 +66,52 @@ get '/:ticker' do
 
     runner()
 end
+
+get '/access_token' do
+    url = "https://www.reddit.com/api/v1/access_token"
+    response = HTTParty.post(url, {
+        body: {
+            grant_type: "password",
+            username: settings.reddit_username,
+            password: settings.reddit_pw
+        },
+        basic_auth: {
+            username: "NVagLjEmWr9PPQ",
+            password: "iLGa4GNKc1UCtGs9dMpseRMhjB5x2g"
+        },
+        headers: {"User-Agent" => "HTTParty"}
+    })
+    puts "--------------------------------"
+    puts response
+    puts "--------------------------------"
+    response["access_token"].to_json
+end
+
+get '/reddit/:ticker' do
+    url = "https://oauth.reddit.com/search"
+    response = HTTParty.get(url, 
+        query: {
+            q: params[:ticker],
+            limit: 100,
+            after: params[:after]
+        },
+        headers: {
+            "Authorization" => "Bearer #{params[:token]}",
+            "User-Agent" => "HTTParty"
+        }
+    )
+    after = response["data"]["after"]
+    puts "-----------------------"
+    puts "Token: #{params[:token]}"
+    puts after
+    puts "-----------------------"
+    response["data"].to_json    
+end
+
+# curl -X POST -d 'grant_type=password&username=[username]&password=[password]' --user '[token]' https://www.reddit.com/api/v1/access_token
+
+# curl -H "Authorization: bearer [token]" -A "ChangeMeClient/0.1 by Ricsta76" https://oauth.reddit.com/api/v1/me
+
 
 # time_query = "&after=24h"
 
